@@ -22,4 +22,34 @@ function DateAsYYYYMMDD($Date)
 		return "";
 	}
 }
+
+function IsValidSession($Operador)
+{
+	$IsIt = FALSE;
+	global $Associado;
+
+	if (! mysql_pconnect("localhost", "httpd", "teste"))
+	{
+		echo "N&atilde;o conectado!<br>";
+	}
+	elseif (! mysql_select_db("ChequeOnLine"))
+	{
+		echo "N&atilde;o selecionado!<br>";
+	}
+	elseif ($result = mysql_query("select * from Operadores where codigo=$Operador"))
+	{
+		if (mysql_num_rows($result) != 1)
+		{
+			echo "C&oacute;digo de usu&aacute;rio inv&aacute;lido!<br>";
+		}
+		else
+		{
+			$rowOperador = mysql_fetch_array($result);
+			$Associado = $rowOperador[associado];
+			$IsIt = TRUE;
+		}
+	}
+
+	return $IsIt;
+}
 ?>
