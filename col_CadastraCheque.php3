@@ -3,29 +3,8 @@
 	<title>Cheque On-Line - Consulta Cheques</title>
 </head>
 <?
-function DateAsYYYYMMDD($Date)
-{
-	if (preg_match("/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/", $Date, $DateComponents))
-	{
-		if ($DateComponents[3] < 70)
-		{
-			$DateComponents[3] += 2000;
-		}
-		elseif ($DateComponents[3] < 100)
-		{
-			$DateComponents[3] += 1900;
-		}
-		elseif ($DateComponents[3] < 1970)
-		{
-			return "";
-		}
-		return $DateComponents[3] * 10000 + $DateComponents[2] * 100 + $DateComponents[1];
-	}
-	else
-	{
-		return "";
-	}
-}
+require "col_FormularioConsulta.php3";
+require "col_Support.php3";
 ?>
 <body bgcolor=#FFFFFF>
 	<h1>Cheque On-Line</h1>
@@ -53,22 +32,8 @@ function DateAsYYYYMMDD($Date)
 	{
 		echo "Falha na execu&ccedil;&atilde;o de $q";
 	}
+
+	FormularioConsulta($Associado);
 	?>
-	<form action="col_ConsultaCheques.php3" method=POST>
-	<input type=hidden name="Associado" value="<? echo $Associado ?>">
-	Operador: <input type=password name="Operador" size=5><br>
-	<?
-	if ($Associado)
-	{
-		?><input type=hidden name="AssociadoEfetivo" value="<? echo $Associado ?>"><?
-	}
-	else
-	{
-		?>Associado: <input type=text name="AssociadoEfetivo" size=5><br><?
-	}
-	?>
-	<hr>
-	CGC ou CPF: <input type=text name="Cliente" size=14><br>
-	<input type=submit value="Pesquisar">
 </body>
 </html>
