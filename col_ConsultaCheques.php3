@@ -2,33 +2,31 @@
 <head>
 	<title>Cheque On-Line - Consulta Cheques</title>
 </head>
-<script language="JavaScript">
-function openWindow(url, name)
-{
-	wndCadastrarCliente = window.open(url, name, 'scrollbars,menubar,resizable,width=400,height=400');
-	window.name = 'opener';
-}
-</script>
+<?
+require "col_Support.php3";
+?>
 <body bgcolor=#FFFFFF>
-	<h1>Cheque On-Line</h1>
 	<h3>Consulta Cheques</h3>
 	<?
-	if (! mysql_pconnect("localhost", "httpd", "teste"))
+	if (IsValidSession($Operador))
 	{
-		echo "N&atilde;o conectado!<br>";
-	}
-	elseif (! mysql_select_db("ChequeOnLine"))
-	{
-		echo "N&atilde;o selecionado!<br>";
-	}
-	else
-	{
+		$NadaConsta = TRUE;
 		#
 		# Relacao de cheques em aberto
 		#
+		if ($result = mysql_query("select * from Clientes where id=$Cliente"))
+		if (mysql_num_rows($result))
+		{
+			while ($rowCliente = mysql_fetch_array($result))
+			{
+				echo "<p>Cliente: <strong>$Cliente</strong> - <strong>$rowCliente[nome]</strong></p>";
+			}
+		}
+		mysql_free_result($result);
 		if ($result = mysql_query("select to_days(vencimento) - to_days(now()),valor from Cheques where cliente=$Cliente and pago <> 1"))
 		if (mysql_num_rows($result))
 		{
+			$NadaConsta = FALSE;
 			$total = 0;
 			while ($rowCheque = mysql_fetch_array($result))
 			{
@@ -43,21 +41,35 @@ function openWindow(url, name)
 					$total += $rowCheque[valor];
 				}
 			}
-			?><table>
-			<tr><th>Prazo</th><th>Quantidade</th><th>Valor</th></tr><?
-			while ($Cheque = each($Cheques))
-			{
-				?>
-				<tr>
-					<td><? echo $Cheque[key] ?></td>
-					<td align=right><? echo $Cheques[$Cheque[key]][quantidade] ?></td>
-					<td align=right>R$<? echo number_format($Cheques[$Cheque[key]][valor], 2, ',', '.') ?></td>
-				</tr>
-				<?
-			}
+			?><table border=0 cellpadding=0 cellspacing=0 width="100%">
+  <tr>
+    <th width="33%" align="left" bgcolor="#80FFFF"><!--mstheme--><font face="trebuchet ms, arial, helvetica"><strong><font face="Arial" color="#000080">DIAS</font></strong><!--mstheme--></font></td>
+    <th width="33%" align="right" bgcolor="#80FFFF"><!--mstheme--><font face="trebuchet ms, arial, helvetica"><strong><font face="Arial" color="#000080">QUANTIDADE</font></strong><!--mstheme--></font></td>
+    <th width="34%" align="right" bgcolor="#80FFFF"><!--mstheme--><font face="trebuchet ms, arial, helvetica"><strong><font face="Arial" color="#000080">VALOR (R$)</font></strong><!--mstheme--></font></td>
+  </tr>
+  <tr>
+    <td width="33%" align=left><!--mstheme--><font face="trebuchet ms, arial, helvetica"><font face="Arial" color="#000080">Até 30 dias</font><!--mstheme--></font></td>
+    <td width="33%" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo $Cheques["30 dias"][quantidade] ?><!--mstheme--></font></td>
+    <td width="34%" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo number_format($Cheques["30 dias"][valor], 2, ",", ".") ?><!--mstheme--></font></td>
+  </tr>
+  <tr>
+    <td width="33%" bgcolor="#80FFFF" align=left><!--mstheme--><font face="trebuchet ms, arial, helvetica"><font face="Arial" color="#000080">De 30 a 60 dias</font><!--mstheme--></font></td>
+    <td width="33%" bgcolor="#80FFFF" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo $Cheques["60 dias"][quantidade] ?><!--mstheme--></font></td>
+    <td width="34%" bgcolor="#80FFFF" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo number_format($Cheques["60 dias"][valor], 2, ",", ".") ?><!--mstheme--></font></td>
+  </tr>
+  <tr>
+    <td width="33%" align=left><!--mstheme--><font face="trebuchet ms, arial, helvetica"><font face="Arial" color="#000080">De 60 a 90 dias</font><!--mstheme--></font></td>
+    <td width="33%" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo $Cheques["90 dias"][quantidade] ?><!--mstheme--></font></td>
+    <td width="34%" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo number_format($Cheques["90 dias"][valor], 2, ",", ".") ?><!--mstheme--></font></td>
+  </tr>
+  <tr>
+    <td width="33%" bgcolor="#80FFFF" align=left><!--mstheme--><font face="trebuchet ms, arial, helvetica"><font face="Arial" color="#000080">Acima de 90 dias</font><!--mstheme--></font></td>
+    <td width="33%" bgcolor="#80FFFF" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo $Cheques["Mais que 90 dias"][quantidade] ?><!--mstheme--></font></td>
+    <td width="34%" bgcolor="#80FFFF" align=right><!--mstheme--><font face="trebuchet ms, arial, helvetica">&nbsp;<? echo number_format($Cheques["Mais de 90 dias"][valor], 2, ",", ".") ?><!--mstheme--></font></td>
+  </tr>
+			<?
+			echo "<tr><td colspan=2 align=right><b>Total<b></td><td align=right>R\$" . number_format($total, 2, ',', '.') . "</td></tr>";
 			?></table><?
-
-			echo "Total: R\$" . number_format($total, 2, ',', '.') . "<br>";
 		}
 		mysql_free_result($result);
 
@@ -67,11 +79,12 @@ function openWindow(url, name)
 		if ($result = mysql_query("select banco,agencia,numero,date_format(vencimento,'%d/%m/%Y') as vencimento,valor from Cheques where cliente=$Cliente and devolucao_motivo is not null"))
 		if (mysql_num_rows($result) > 0)
 		{
+			$NadaConsta = FALSE;
 			$total = 0;
 			?>
 			Cheques devolvidos:
-			<table>
-			<tr><th>Banco</th><th>Ag&ecirc;ncia</th><th>N&uacute;mero</th><th>Vencimento</th><th align=right>Valor</th></tr>
+			<table border=1 cellpadding=0 cellspacing=0>
+			<tr bgcolor=#80FFFF><th>Banco</th><th>Ag&ecirc;ncia</th><th>N&uacute;mero</th><th>Vencimento</th><th align=right>Valor</th></tr>
 			<?
 			while ($row = mysql_fetch_array($result))
 			{
@@ -86,7 +99,14 @@ function openWindow(url, name)
 				</tr>
 				<?
 			}
-			echo "</table>Total de devolvidos: R$" . number_format($total, 2, ',', '.') . "<br>";
+			echo "<tr><td colspan=4 align=right>Total de devolvidos</td><td align=right>R$" . number_format($total, 2, ',', '.') . "</td></tr></table>";
+		}
+
+		if ($NadaConsta == TRUE)
+		{
+			?>
+				<p align="center"><font face="Arial Black" color="#FF0000">NADA CONSTA EM NOSSOS REGISTROS</font></p>
+			<?
 		}
 	}
 
@@ -94,23 +114,18 @@ function openWindow(url, name)
 	?>
 	<hr>
 	<form action="col_CadastraCheque.php3" method=POST>
-		<input type=hidden name=Associado value="<? echo $Associado ?>">
-		<input type=hidden name=AssociadoEfetivo value="<? echo $AssociadoEfetivo ?>">
 		<input type=hidden name=Operador value="<? echo $Operador ?>">
 		<input type=hidden name=Cliente value="<? echo $Cliente ?>">
-		<table>
-			<tr><th colspan=2>Dados do cheque:</th></tr>
-			<tr><td>CPF ou CGC</td><td><? echo $Cliente ?>
-			<a href="javascript:openWindow('col_CadastraCliente.php3?Cliente=<? echo $Cliente ?>','Win')">atualizar dados</a></td></tr>
-			<tr><td>Banco</td><td><input type=text name=Cheque[banco] size=4></td></tr>
-			<tr><td>Ag&ecirc;ncia</td><td><input type=text name=Cheque[agencia] size=4></td></tr>
-			<tr><td>Conta</td><td><input type=text name=Cheque[conta] size=10></td></tr>
-			<tr><td>N&uacute;mero do cheque</td><td><input type=text name=Cheque[numero] size=10></td></tr>
-			<tr><td>Valor</td><td>R$<input type=text name=Cheque[valor] size=16></td></tr>
-			<tr><td>Data de emiss&atilde;o</td><td><input type=text name=Cheque[emissao] size=10 value="<? echo $emissao ?>"></td></tr>
-			<tr><td>Data de vencimento</td><td><input type=text name=Cheque[vencimento] size=10 value="<? echo $vencimento ?>"></td></tr>
-			<tr><td colspan=2><input type=submit value="Registrar cheque"></td></tr>
-		</table>
+
+
+
+<p><small><em><font color="#000080" face="Arial Black"><strong>DADOS DO CHEQUE</strong></font></em></small></p>
+
+<p><font face="Arial"><font color="#000080">Banco: </font><input type="text" name="Cheque[banco]" size="23"> <font color="#000080">Agência: </font><input type="text" name="Cheque[agencia]" size="5"><font color="#000080">C. Corrente: </font><input type="text" name="Cheque[conta]" size="19"></font></p>
+
+<p><font face="Arial"><font color="#000080">N&uacute;mero do cheque: </font><input type="text" name="Cheque[numero]" size="23"></font></p>
+
+<p><font face="Arial"><font color="#000080">Valor: </font><input type="text" name="Cheque[valor]" size="10"> <font color="#000080">Emissão: </font><input type="text" name="Cheque[emissao]" size="10" value="<? echo $emissao ?>"> <font color="#000080">Vencimento: </font><input type="text" name="Cheque[vencimento]" size="10" value="<? echo $vencimento ?>"></font><input type="submit" value="CADASTRAR" name="B1"></p>
 	</form>
 </body>
 </html>
