@@ -23,26 +23,70 @@ function openWindow(url, name)
 	}
 	else
 	{
-		if ($result = mysql_query("select * from Cheques where cliente=$Cliente"))
+		#
+		# Relacao de cheques em aberto
+		#
+		if ($result = mysql_query("select to_days(vencimento) - to_days(now()),valor from Cheques where cliente=$Cliente and pago <> 1"))
 		if (mysql_num_rows($result))
 		{
 			$total = 0;
-			?><table>
-			<tr><th>N&uacute;mero</th><th>Vencimento</th><th>Valor</th></tr><?
 			while ($rowCheque = mysql_fetch_array($result))
+			{
+				if ($rowCheque[0] >= 0)
+				{
+					if ($rowCheque[0] < 31) $prazo = "30 dias";
+					elseif ($rowCheque[0] < 61) $prazo = "60 dias";
+					elseif ($rowCheque[0] < 91) $prazo = "90 dias";
+					else $prazo = "Mais que 90 dias";
+					$Cheques[$prazo][quantidade]++;
+					$Cheques[$prazo][valor] += $rowCheque[valor];
+					$total += $rowCheque[valor];
+				}
+			}
+			?><table>
+			<tr><th>Prazo</th><th>Quantidade</th><th>Valor</th></tr><?
+			while ($Cheque = each($Cheques))
 			{
 				?>
 				<tr>
-					<td><? echo $rowCheque[numero] ?></td>
-					<td><? echo $rowCheque[vencimento] ?></td>
-					<td><? echo $rowCheque[valor] ?></td>
+					<td><? echo $Cheque[key] ?></td>
+					<td align=right><? echo $Cheques[$Cheque[key]][quantidade] ?></td>
+					<td align=right>R$<? echo number_format($Cheques[$Cheque[key]][valor], 2, ',', '.') ?></td>
 				</tr>
 				<?
-				$total += $rowCheque[valor];
 			}
 			?></table><?
 
-			echo "Total: R\$ $total<br>";
+			echo "Total: R\$" . number_format($total, 2, ',', '.') . "<br>";
+		}
+		mysql_free_result($result);
+
+		#
+		# Relação de cheques devolvidos
+		#
+		if ($result = mysql_query("select banco,agencia,numero,date_format(vencimento,'%d/%m/%Y') as vencimento,valor from Cheques where cliente=$Cliente and devolucao_motivo is not null"))
+		if (mysql_num_rows($result) > 0)
+		{
+			$total = 0;
+			?>
+			Cheques devolvidos:
+			<table>
+			<tr><th>Banco</th><th>Ag&ecirc;ncia</th><th>N&uacute;mero</th><th>Vencimento</th><th align=right>Valor</th></tr>
+			<?
+			while ($row = mysql_fetch_array($result))
+			{
+				$total += $row[valor];
+				?>
+				<tr>
+				<td align=right><? echo $row[banco] ?></td>
+				<td align=right><? echo $row[agencia] ?></td>
+				<td align=right><? echo $row[numero] ?></td>
+				<td align=right><? echo $row[vencimento] ?></td>
+				<td align=right><? echo number_format($row[valor], 2, ',', '.') ?></td>
+				</tr>
+				<?
+			}
+			echo "</table>Total de devolvidos: R$" . number_format($total, 2, ',', '.') . "<br>";
 		}
 	}
 
